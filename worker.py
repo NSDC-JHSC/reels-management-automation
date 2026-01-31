@@ -1,5 +1,5 @@
 import time
-from notification import process_scheduled_notifications
+from notifications import process_scheduled_notifications
 
 print("📨 Email worker started")
 
@@ -11,5 +11,4 @@ while True:
     except Exception as e:
         print("Worker error:", e)
 
-    # Run every 1 hour
-    time.sleep(3600)
+    time.sleep(300)
