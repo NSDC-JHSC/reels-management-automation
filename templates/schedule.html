@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule - Video Content Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Full Schedule</h1>
+        <p class="page-subtitle">{{ total_entries }} entries • Generated: {{ schedule_info.last_generated|date if
+            schedule_info.last_generated else 'Not generated' }}</p>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('generateModal')">
+        <i class="fas fa-sync-alt"></i> Regenerate Schedule
+    </button>
+</div>
+
+<!-- Schedule by Week -->
+{% for week_num, entries in weeks.items() %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <span class="week-badge">
+                Week {{ week_num }}
+            </span>
+            {% set first_entry = entries[0] %}
+            {{ first_entry.deadline|date('%B %Y') }}
+        </h2>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%">Day</th>
+                    <th style="width: 15%">Date</th>
+                    <th style="width: 35%">Team</th>
+                    <th style="width: 15%">Status</th>
+                    <th style="width: 15%">Submitted</th>
+                    <th style="width: 15%">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>
+                        <strong>{{ entry.deadline_day }}</strong>
+                    </td>
+                    <td>{{ entry.deadline|date }}</td>
+                    <td>
+                        <span class="team-dot" data-color="{{ entry.team_color }}"></span>
+                        {{ entry.team_name }}
+                    </td>
+                    <td>
+                        {% if entry.status == 'submitted' %}
+                        <span class="badge badge-submitted"><i class="fas fa-check-circle"></i> Submitted</span>
+                        {% elif entry.status == 'overdue' %}
+                        <span class="badge badge-overdue"><i class="fas fa-exclamation-circle"></i> Overdue</span>
+                        {% else %}
+                        <span class="badge badge-pending"><i class="fas fa-clock"></i> Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.submitted_at %}
+                        {{ entry.submitted_at }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.status != 'submitted' %}
+                        <button class="btn btn-sm btn-success mark-btn" data-id="{{ entry.id }}"
+                            title="Mark as Submitted">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning remind-btn" data-id="{{ entry.id }}"
+                            title="Send Reminder">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        {% else %}
+                        {% if entry.submission_url %}
+                        <a href="{{ entry.submission_url }}" target="_blank" class="btn btn-sm btn-primary"
+                            title="View Submission">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Generate Modal -->
+<div class="modal-overlay" id="generateModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Regenerate Schedule</h3>
+            <button class="modal-close" onclick="closeModal('generateModal')">&times;</button>
+        </div>
+        <div class="warning-box">
+            <p class="warning-title"><i class="fas fa-exclamation-triangle"></i> Warning</p>
+            <p class="warning-text">This will replace the current schedule. All submission tracking
+                data will be reset.</p>
+        </div>
+        <form id="generateForm" onsubmit="submitGenerate(event)">
+            <div class="form-group">
+                <label class="form-label">Number of Weeks</label>
+                <input type="number" class="form-input" id="genWeeks" value="12" min="1" max="52">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Start Date</label>
+                <input type="date" class="form-input" id="genStartDate">
+            </div>
+            <button type="submit" class="btn btn-danger full-width">
+                <i class="fas fa-sync-alt"></i> Regenerate Schedule
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Mark Submitted Modal -->
+<div class="modal-overlay" id="submitModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Mark as Submitted</h3>
+            <button class="modal-close" onclick="closeModal('submitModal')">&times;</button>
+        </div>
+        <form id="submitForm" onsubmit="submitSubmission(event)">
+            <input type="hidden" id="submitId">
+            <div class="form-group">
+                <label class="form-label">Video URL (Optional)</label>
+                <input type="url" class="form-input" id="submitUrl" placeholder="https://drive.google.com/...">
+            </div>
+            <button type="submit" class="btn btn-success full-width">
+                <i class="fas fa-check"></i> Confirm Submission
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .week-badge {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        margin-right: 10px;
+    }
+
+    .warning-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .warning-title {
+        color: var(--danger);
+        font-weight: 500;
+    }
+
+    .warning-text {
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Apply team colors from data attributes
+    document.querySelectorAll('.team-dot[data-color]').forEach(function (el) {
+        el.style.background = el.getAttribute('data-color');
+    });
+
+    // Mark submitted button handlers
+    document.querySelectorAll('.mark-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            markSubmitted(this.getAttribute('data-id'));
+        });
+    });
+
+    // Reminder button handlers
+    document.querySelectorAll('.remind-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            sendReminder(this.getAttribute('data-id'));
+        });
+    });
+
+    function markSubmitted(id) {
+        document.getElementById('submitId').value = id;
+        openModal('submitModal');
+    }
+
+    async function submitSubmission(e) {
+        e.preventDefault();
+        var id = document.getElementById('submitId').value;
+        var url = document.getElementById('submitUrl').value;
+
+        var result = await apiCall('/api/mark-submitted/' + id, 'POST', {
+            submission_url: url
+        });
+
+        if (result.success) {
+            closeModal('submitModal');
+            setTimeout(function () { location.reload(); }, 1000);
+        }
+    }
+
+    async function sendReminder(id) {
+        await apiCall('/api/send-reminder/' + id, 'POST');
+    }
+
+    async function submitGenerate(e) {
+        e.preventDefault();
+        var weeks = document.getElementById('genWeeks').value;
+        var startDate = document.getElementById('genStartDate').value;
+
+        var result = await apiCall('/api/generate-schedule', 'POST', {
+            weeks: parseInt(weeks),
+            start_date: startDate || null
+        });
+
+        if (result.success) {
+            closeModal('generateModal');
+            setTimeout(function () { location.reload(); }, 1000);
+        }
+    }
+</script>
+{% endblock %}

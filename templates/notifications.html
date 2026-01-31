@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Video Content Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Notification Center</h1>
+        <p class="page-subtitle">Email history and notification management</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-warning" onclick="processNow()">
+            <i class="fas fa-bolt"></i> Process Now
+        </button>
+        <button class="btn btn-primary" onclick="openModal('testModal')">
+            <i class="fas fa-paper-plane"></i> Test Email
+        </button>
+    </div>
+</div>
+
+<!-- Notification Settings -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-cog" style="color: var(--primary); margin-right: 10px;"></i>Reminder
+            Schedule</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div style="background: rgba(102, 126, 234, 0.1); padding: 20px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
+            <h4 style="margin-bottom: 5px;">7 Days Before</h4>
+            <p style="color: var(--gray); font-size: 14px;">Initial assignment notification</p>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 10px;">⏰</div>
+            <h4 style="margin-bottom: 5px;">3 Days Before</h4>
+            <p style="color: var(--gray); font-size: 14px;">First reminder</p>
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.1); padding: 20px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+            <h4 style="margin-bottom: 5px;">1 Day Before</h4>
+            <p style="color: var(--gray); font-size: 14px;">Urgent reminder</p>
+        </div>
+        <div style="background: rgba(220, 38, 38, 0.1); padding: 20px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 10px;">🚨</div>
+            <h4 style="margin-bottom: 5px;">Overdue</h4>
+            <p style="color: var(--gray); font-size: 14px;">Overdue notification</p>
+        </div>
+    </div>
+</div>
+
+<!-- Email Log -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-history" style="color: var(--primary); margin-right: 10px;"></i>Email
+            History</h2>
+    </div>
+    {% if email_log %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Recipient</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in email_log %}
+                <tr>
+                    <td>{{ log.timestamp }}</td>
+                    <td>{{ log.to }}</td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ log.subject }}
+                    </td>
+                    <td>
+                        {% if log.status == 'sent' %}
+                        <span class="badge badge-submitted"><i class="fas fa-check"></i> Sent</span>
+                        {% else %}
+                        <span class="badge badge-overdue" title="{{ log.error }}"><i class="fas fa-times"></i>
+                            Failed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No emails sent yet</p>
+        <p style="font-size: 14px; margin-top: 5px;">Emails will appear here once notifications are processed</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Email Configuration Info -->
+
+
+<!-- Test Email Modal -->
+<div class="modal-overlay" id="testModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Send Test Email</h3>
+            <button class="modal-close" onclick="closeModal('testModal')">&times;</button>
+        </div>
+        <form id="testForm" onsubmit="sendTest(event)">
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-input" id="testEmail" required placeholder="your@email.com">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-paper-plane"></i> Send Test
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function processNow() {
+        showToast('Processing notifications...', 'info');
+        const result = await apiCall('/api/process-notifications', 'POST');
+        if (result.success) {
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
+
+    async function sendTest(e) {
+        e.preventDefault();
+        const email = document.getElementById('testEmail').value;
+        const result = await apiCall('/api/test-email', 'POST', { email });
+        if (result.success) {
+            closeModal('testModal');
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Video Content Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">{{ current_date }}</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="generateSchedule()">
+            <i class="fas fa-calendar-plus"></i> Generate Schedule
+        </button>
+        <button class="btn btn-warning" onclick="processNotifications()">
+            <i class="fas fa-bell"></i> Send Reminders
+        </button>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-value">{{ total_scheduled }}</div>
+        <div class="stat-label">Total Scheduled</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-value">{{ total_submitted }}</div>
+        <div class="stat-label">Videos Received</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+        <div class="stat-value">{{ total_pending }}</div>
+        <div class="stat-label">Pending Submissions</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-value">{{ total_overdue }}</div>
+        <div class="stat-label">Overdue</div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="grid-2">
+    <!-- Upcoming Deadlines -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-clock"
+                    style="color: var(--warning); margin-right: 10px;"></i>Upcoming Deadlines</h2>
+            <a href="/schedule" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        {% if upcoming %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Deadline</th>
+                        <th>Days Left</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in upcoming[:5] %}
+                    <tr>
+                        <td>
+                            <span class="team-dot" style="background: {{ item.team_color }};"></span>
+                            {{ item.team_name }}
+                        </td>
+                        <td>{{ item.deadline|date }}</td>
+                        <td>
+                            {% if item.days_until == 0 %}
+                            <span class="badge badge-overdue">Today!</span>
+                            {% elif item.days_until == 1 %}
+                            <span class="badge badge-pending">Tomorrow</span>
+                            {% else %}
+                            <span class="badge badge-submitted">{{ item.days_until }} days</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="markSubmitted({{ item.id }})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="sendReminder({{ item.id }})">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-check"></i>
+            <p>No upcoming deadlines in the next 7 days</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Overdue Submissions -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-exclamation-circle"
+                    style="color: var(--danger); margin-right: 10px;"></i>Overdue Submissions</h2>
+        </div>
+        {% if overdue %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Was Due</th>
+                        <th>Days Overdue</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in overdue[:5] %}
+                    <tr>
+                        <td>
+                            <span class="team-dot" style="background: {{ item.team_color }};"></span>
+                            {{ item.team_name }}
+                        </td>
+                        <td>{{ item.deadline|date }}</td>
+                        <td><span class="badge badge-overdue">{{ item.days_overdue }} days</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="markSubmitted({{ item.id }})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="sendReminder({{ item.id }})">
+                                <i class="fas fa-exclamation"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-smile"></i>
+            <p>No overdue submissions! 🎉</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Team Performance -->
+<div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-chart-bar" style="color: var(--primary); margin-right: 10px;"></i>Team
+            Performance</h2>
+        <a href="/teams" class="btn btn-sm btn-primary">Manage Teams</a>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Total Assigned</th>
+                    <th>Submitted</th>
+                    <th>Pending</th>
+                    <th>Overdue</th>
+                    <th>On-Time Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team_id, stats in team_stats.items() %}
+                <tr>
+                    <td>
+                        <span class="team-dot" style="background: {{ stats.team_color }};"></span>
+                        {{ stats.team_name }}
+                    </td>
+                    <td>{{ stats.total_assigned }}</td>
+                    <td><span class="badge badge-submitted">{{ stats.submitted }}</span></td>
+                    <td><span class="badge badge-pending">{{ stats.pending }}</span></td>
+                    <td>
+                        {% if stats.overdue > 0 %}
+                        <span class="badge badge-overdue">{{ stats.overdue }}</span>
+                        {% else %}
+                        <span class="badge badge-submitted">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div
+                                style="flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                <div
+                                    style="width: {{ stats.on_time_rate }}%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary));">
+                                </div>
+                            </div>
+                            <span style="font-weight: 600;">{{ stats.on_time_rate }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Generate Schedule Modal -->
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Generate New Schedule</h3>
+            <button class="modal-close" onclick="closeModal('scheduleModal')">&times;</button>
+        </div>
+        <form id="scheduleForm" onsubmit="submitScheduleForm(event)">
+            <div class="form-group">
+                <label class="form-label">Number of Weeks</label>
+                <input type="number" class="form-input" id="scheduleWeeks" value="12" min="1" max="52">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Start Date (Optional)</label>
+                <input type="date" class="form-input" id="scheduleStartDate">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-calendar-plus"></i> Generate Schedule
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Mark Submitted Modal -->
+<div class="modal-overlay" id="submitModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Mark as Submitted</h3>
+            <button class="modal-close" onclick="closeModal('submitModal')">&times;</button>
+        </div>
+        <form id="submitForm" onsubmit="submitSubmissionForm(event)">
+            <input type="hidden" id="submitScheduleId">
+            <div class="form-group">
+                <label class="form-label">Video URL (Optional)</label>
+                <input type="url" class="form-input" id="submitUrl" placeholder="https://drive.google.com/...">
+            </div>
+            <button type="submit" class="btn btn-success" style="width: 100%;">
+                <i class="fas fa-check"></i> Confirm Submission
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function generateSchedule() {
+        openModal('scheduleModal');
+    }
+
+    async function submitScheduleForm(e) {
+        e.preventDefault();
+        const weeks = document.getElementById('scheduleWeeks').value;
+        const startDate = document.getElementById('scheduleStartDate').value;
+
+        const result = await apiCall('/api/generate-schedule', 'POST', {
+            weeks: parseInt(weeks),
+            start_date: startDate || null
+        });
+
+        if (result.success) {
+            closeModal('scheduleModal');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    function markSubmitted(scheduleId) {
+        document.getElementById('submitScheduleId').value = scheduleId;
+        openModal('submitModal');
+    }
+
+    async function submitSubmissionForm(e) {
+        e.preventDefault();
+        const scheduleId = document.getElementById('submitScheduleId').value;
+        const url = document.getElementById('submitUrl').value;
+
+        const result = await apiCall(`/api/mark-submitted/${scheduleId}`, 'POST', {
+            submission_url: url
+        });
+
+        if (result.success) {
+            closeModal('submitModal');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    async function sendReminder(scheduleId) {
+        const result = await apiCall(`/api/send-reminder/${scheduleId}`, 'POST');
+    }
+
+    async function processNotifications() {
+        const result = await apiCall('/api/process-notifications', 'POST');
+        if (result.success) {
+            showToast(`Processed ${result.results?.length || 0} notifications`, 'success');
+        }
+    }
+</script>
+{% endblock %}

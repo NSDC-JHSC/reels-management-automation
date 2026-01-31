@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Teams - Video Content Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Team Management</h1>
+        <p class="page-subtitle">Manage your 8 content teams</p>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('testEmailModal')">
+        <i class="fas fa-paper-plane"></i> Test Email
+    </button>
+</div>
+
+<!-- Teams Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+    {% for team in teams %}
+    <div class="card" style="position: relative; overflow: hidden;">
+        <div
+            style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: {{ team.color }}; opacity: 0.1; border-radius: 0 0 0 100%;">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+            <div
+                style="width: 50px; height: 50px; border-radius: 12px; background: {{ team.color }}; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-users" style="color: white; font-size: 20px;"></i>
+            </div>
+            <div>
+                <h3 style="font-weight: 600; font-size: 18px;">{{ team.name }}</h3>
+                <p style="color: var(--gray); font-size: 14px;">{{ team.contact_person }}</p>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <p style="color: var(--gray); font-size: 13px; margin-bottom: 5px;">Email</p>
+            <p style="font-weight: 500;">{{ team.email }}</p>
+        </div>
+
+        {% if team.stats %}
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+            <div style="text-align: center; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                <div style="font-size: 20px; font-weight: 700; color: var(--primary);">{{ team.stats.total_assigned }}
+                </div>
+                <div style="font-size: 10px; color: var(--gray);">Assigned</div>
+            </div>
+            <div style="text-align: center; padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                <div style="font-size: 20px; font-weight: 700; color: var(--success);">{{ team.stats.submitted }}</div>
+                <div style="font-size: 10px; color: var(--gray);">Submitted</div>
+            </div>
+            <div style="text-align: center; padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 8px;">
+                <div style="font-size: 20px; font-weight: 700; color: var(--warning);">{{ team.stats.pending }}</div>
+                <div style="font-size: 10px; color: var(--gray);">Pending</div>
+            </div>
+            <div style="text-align: center; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                <div style="font-size: 20px; font-weight: 700; color: var(--danger);">{{ team.stats.overdue }}</div>
+                <div style="font-size: 10px; color: var(--gray);">Overdue</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span style="font-size: 13px; color: var(--gray);">On-Time Rate</span>
+                <span style="font-size: 13px; font-weight: 600;">{{ team.stats.on_time_rate }}%</span>
+            </div>
+            <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                <div
+                    style="width: {{ team.stats.on_time_rate }}%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary));">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <button class="btn btn-primary btn-sm" style="width: 100%;"
+            onclick="editTeam({{ team.id }}, '{{ team.name }}', '{{ team.email }}', '{{ team.contact_person }}')">
+            <i class="fas fa-edit"></i> Edit Team
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Edit Team Modal -->
+<div class="modal-overlay" id="editTeamModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Team</h3>
+            <button class="modal-close" onclick="closeModal('editTeamModal')">&times;</button>
+        </div>
+        <form id="editTeamForm" onsubmit="submitEditTeam(event)">
+            <input type="hidden" id="editTeamId">
+            <div class="form-group">
+                <label class="form-label">Team Name</label>
+                <input type="text" class="form-input" id="editTeamName" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-input" id="editTeamEmail" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contact Person</label>
+                <input type="text" class="form-input" id="editTeamContact" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal-overlay" id="testEmailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Send Test Email</h3>
+            <button class="modal-close" onclick="closeModal('testEmailModal')">&times;</button>
+        </div>
+        <form id="testEmailForm" onsubmit="sendTestEmail(event)">
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-input" id="testEmailAddress" required placeholder="your@email.com">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-paper-plane"></i> Send Test Email
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function editTeam(id, name, email, contact) {
+        document.getElementById('editTeamId').value = id;
+        document.getElementById('editTeamName').value = name;
+        document.getElementById('editTeamEmail').value = email;
+        document.getElementById('editTeamContact').value = contact;
+        openModal('editTeamModal');
+    }
+
+    async function submitEditTeam(e) {
+        e.preventDefault();
+        const teamId = document.getElementById('editTeamId').value;
+
+        const result = await apiCall(`/api/update-team/${teamId}`, 'POST', {
+            name: document.getElementById('editTeamName').value,
+            email: document.getElementById('editTeamEmail').value,
+            contact_person: document.getElementById('editTeamContact').value
+        });
+
+        if (result.success) {
+            closeModal('editTeamModal');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    async function sendTestEmail(e) {
+        e.preventDefault();
+        const email = document.getElementById('testEmailAddress').value;
+
+        const result = await apiCall('/api/test-email', 'POST', { email });
+
+        if (result.success) {
+            closeModal('testEmailModal');
+        }
+    }
+</script>
+{% endblock %}

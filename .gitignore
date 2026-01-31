@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environments
+.env
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project-specific ignored files and directories
+# SQLite database files if not committed to version control
+# instance/
+# *.sqlite
+
+# IDE-specific files (e.g. VS Code, PyCharm)
+.idea/
+.vscode/
+.spyderproject
+.spyproject
+.ropeproject
+
+# OS-specific files
+.DS_Store
+*.swp

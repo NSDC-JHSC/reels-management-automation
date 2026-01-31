@@ -1,0 +1,60 @@
+{
+    "teams": [
+        {
+            "id": 1,
+            "name": "Technical Team",
+            "email": "kd803039@gmail.com",
+            "contact_person": "shadab bhai",
+            "color": "#FF6B6B"
+        },
+        {
+            "id": 2,
+            "name": "NSDC Core Team",
+            "email": "nsdc.jamiahamdard@gmail.com",
+            "contact_person": "NSDC",
+            "color": "#4ECDC4"
+        },
+        {
+            "id": 3,
+            "name": "Creative team",
+            "email": "creative.nsdcjh@gmail.com",
+            "contact_person": "Creative team",
+            "color": "#45B7D1"
+        },
+        {
+            "id": 4,
+            "name": "Corporate and Marketing team",
+            "email": "itsmohdshadabkhan@gmail.com",
+            "contact_person": "shadab bhai 2",
+            "color": "#96CEB4"
+        },
+        {
+            "id": 5,
+            "name": "Management & Disciplinary Team",
+            "email": "team5@example.com",
+            "contact_person": "Contact 5",
+            "color": "#FFEAA7"
+        },
+        {
+            "id": 6,
+            "name": "Media Team",
+            "email": "team6@example.com",
+            "contact_person": "Contact 6",
+            "color": "#DDA0DD"
+        },
+        {
+            "id": 7,
+            "name": "Data Science Team",
+            "email": "team7@example.com",
+            "contact_person": "Contact 7",
+            "color": "#98D8C8"
+        },
+        {
+            "id": 8,
+            "name": "Social Media Team",
+            "email": "team8@example.com",
+            "contact_person": "Contact 8",
+            "color": "#F7DC6F"
+        }
+    ]
+}

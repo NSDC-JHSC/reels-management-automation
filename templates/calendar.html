@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - Video Content Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Content Calendar</h1>
+        <p class="page-subtitle">Video submission schedule at a glance</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <a href="/calendar?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-primary">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <span style="font-size: 20px; font-weight: 600; color: black;">{{ month_name }} {{ year }}</span>
+        <a href="/calendar?year={{ next_year }}&month={{ next_month }}" class="btn btn-primary">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Calendar -->
+<div class="card">
+    <style>
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .calendar th {
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .calendar td {
+            width: 14.28%;
+            height: 120px;
+            vertical-align: top;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .calendar td:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .day-number {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .day-number.today {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-event {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .calendar-event:hover {
+            transform: scale(1.02);
+        }
+
+        .calendar-event.submitted {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .calendar-event.overdue {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .empty-day {
+            background: #f8fafc;
+        }
+    </style>
+
+    <table class="calendar">
+        <thead>
+            <tr>
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+                <th>Friday</th>
+                <th>Saturday</th>
+                <th>Sunday</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in month_days %}
+            <tr>
+                {% for day in week %}
+                <td class="{% if day == 0 %}empty-day{% endif %}">
+                    {% if day != 0 %}
+                    <div class="day-number {% if day == today %}today{% endif %}">
+                        {% if day == today %}
+                        <span>{{ day }}</span>
+                        {% else %}
+                        {{ day }}
+                        {% endif %}
+                    </div>
+                    {% for event in events if event.day == day %}
+                    <div class="calendar-event {{ event.status }}" style="background: {{ event.color }};"
+                        onclick="showEventDetails({{ event.id }}, '{{ event.title }}', '{{ event.date }}', '{{ event.time }}', '{{ event.status }}')">
+                        {% if event.status == 'submitted' %}
+                        <i class="fas fa-check-circle"></i>
+                        {% elif event.status == 'overdue' %}
+                        <i class="fas fa-exclamation-circle"></i>
+                        {% else %}
+                        <i class="fas fa-video"></i>
+                        {% endif %}
+                        {{ event.title }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Legend -->
+<div class="card" style="margin-top: 20px;">
+    <h3 class="card-title" style="margin-bottom: 15px;">Legend</h3>
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 20px; height: 20px; background: var(--primary); border-radius: 4px;"></div>
+            <span>Pending Submission</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 20px; height: 20px; background: var(--primary); border-radius: 4px; opacity: 0.6;"></div>
+            <span>Submitted ✓</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 20px; height: 20px; background: var(--danger); border-radius: 4px;"></div>
+            <span>Overdue</span>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal-overlay" id="eventModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="eventTitle">Event Details</h3>
+            <button class="modal-close" onclick="closeModal('eventModal')">&times;</button>
+        </div>
+        <div id="eventDetails">
+            <p><strong>Date:</strong> <span id="eventDate"></span></p>
+            <p><strong>Time:</strong> <span id="eventTime"></span></p>
+            <p><strong>Status:</strong> <span id="eventStatus"></span></p>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-success" id="eventMarkBtn" onclick="markFromModal()">
+                <i class="fas fa-check"></i> Mark Submitted
+            </button>
+            <button class="btn btn-warning" id="eventReminderBtn" onclick="reminderFromModal()">
+                <i class="fas fa-bell"></i> Send Reminder
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentEventId = null;
+
+    function showEventDetails(id, title, date, time, status) {
+        currentEventId = id;
+        document.getElementById('eventTitle').textContent = title;
+        document.getElementById('eventDate').textContent = date;
+        document.getElementById('eventTime').textContent = time;
+
+        const statusSpan = document.getElementById('eventStatus');
+        statusSpan.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        statusSpan.className = `badge badge-${status}`;
+
+        // Hide mark button if already submitted
+        document.getElementById('eventMarkBtn').style.display = status === 'submitted' ? 'none' : 'inline-flex';
+
+        openModal('eventModal');
+    }
+
+    async function markFromModal() {
+        if (!currentEventId) return;
+        const result = await apiCall(`/api/mark-submitted/${currentEventId}`, 'POST', {});
+        if (result.success) {
+            closeModal('eventModal');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    async function reminderFromModal() {
+        if (!currentEventId) return;
+        await apiCall(`/api/send-reminder/${currentEventId}`, 'POST');
+    }
+</script>
+{% endblock %}
