@@ -1,0 +1,17 @@
+version: '1.0'
+
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8001:8000"
+    env_file:
+      - .env
+    restart: always
+
+  worker:
+    build: .
+    command: python worker.py
+    env_file:
+      - .env
+    restart: always

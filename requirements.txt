@@ -1,5 +1,6 @@
 # Video Content Management System - Requirements
 Flask==3.0.0
+gunicorn
 Flask-APScheduler==1.13.1
 python-dotenv==1.0.0
 Werkzeug==3.0.1
